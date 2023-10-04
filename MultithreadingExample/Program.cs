@@ -19,6 +19,8 @@ namespace MultithreadingExample
         private static DateTime startTime;
         private static DateTime endTime;
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private static int TotalRecorsCount = 0;
+        private static int UpdateRecorsCount = 0;
 
         static async Task<List<DataModel>> FetchDataFromApi(string apiUrl)
         {
@@ -43,7 +45,7 @@ namespace MultithreadingExample
 
             try
             {
-                
+
                 /* Fetch Data */
                 //Console.WriteLine("Fetching Data is in process ...");
                 Log.Information("Fetching Data is in process ...");
@@ -70,6 +72,7 @@ namespace MultithreadingExample
 
                 //Now consume it only for 100 records
                 dataList = dataList.Take(100).ToList();
+                TotalRecorsCount = dataList.Count;
 
                 await PostDataToApiParallel(dataList, degreeOfParallelism);
 
@@ -78,7 +81,7 @@ namespace MultithreadingExample
 
                 /* Logs */
                 //Console.WriteLine("Processing complete.");
-                Log.Information("Processing complete.");
+                Log.Information($"Processing complete for Total Records: {UpdateRecorsCount}/{TotalRecorsCount}.");
 
                 endTime = DateTime.Now;
                 //Console.WriteLine("Processing ends on: " + endTime);
@@ -138,14 +141,15 @@ namespace MultithreadingExample
                         if (response.IsSuccessStatusCode)
                         {
                             string responseJson = await response.Content.ReadAsStringAsync();
-                                //Console.WriteLine(responseJson);
-                                //Log.Information(responseJson);
-                                Log.Information("Record Update:(" + responseJson + ");");
+                            UpdateRecorsCount++;
+                            //Console.WriteLine(responseJson);
+                            //Log.Information(responseJson);
+                            Log.Information($"Record Update {UpdateRecorsCount}:({responseJson.Replace("\n", "").Trim()});");
                         }
                         else
                         {
-                                //Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
-                                Log.Error($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                            //Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                            Log.Error($"Error: {response.StatusCode} - {response.ReasonPhrase}");
                         }
                     }
                 }, cancellationToken);
