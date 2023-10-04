@@ -1,18 +1,24 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace MultithreadingExample
 {
     class Program
     {
+        private static int degreeOfParallelism = int.Parse(ConfigurationManager.AppSettings["DegreeOfParallelism"]);
         private static readonly string getApiUrl = "https://countrycode.org/api/countryCode/countryMenu";
         private static readonly string postApiUrl = "https://jsonplaceholder.typicode.com/posts";
         private static DateTime startTime;
         private static DateTime endTime;
+        private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         static async Task<List<DataModel>> FetchDataFromApi(string apiUrl)
         {
@@ -26,67 +32,135 @@ namespace MultithreadingExample
 
         static async Task Main(string[] args)
         {
+            // Define the excluded messages
+            var excludedMessages = new HashSet<string> { "Record Update:" };
+
+            // Configure Serilog for logging to the console and a log file
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day) // Specify the log file name and rolling interval
+                .CreateLogger();
+
             try
             {
-                startTime = DateTime.Now;
-
+                
                 /* Fetch Data */
-                Console.WriteLine("Processing starts on: " + startTime);
-                Console.WriteLine("Fetching Data is in process ...");
+                //Console.WriteLine("Fetching Data is in process ...");
+                Log.Information("Fetching Data is in process ...");
+
                 List<DataModel> dataList = await FetchDataFromApi(getApiUrl);
-                Console.WriteLine("Fetching Data is completed ...");
+                //Console.WriteLine("Fetching Data is completed ...");
+                Log.Information("Fetching Data is completed ...");
 
                 /* Post Data */
-                Console.WriteLine("Posting Data is in process ...");
-                await PostDataToApiParallel(dataList); // Use parallel processing
-                Console.WriteLine("Posting Data is completed ...");
+                startTime = DateTime.Now;
+
+                //Console.WriteLine("Processing starts with " + degreeOfParallelism + " Degree Of Parallelism on: " + startTime);
+                Log.Information($"Processing starts with {degreeOfParallelism} Degree Of Parallelism on: {startTime}");
+                //Console.WriteLine("Posting Data is in process ...");
+                Log.Information("Posting Data is in process ...");
+
+                if (degreeOfParallelism == 0)
+                {
+                    // Use Environment.ProcessorCount to get the maximum available threads
+                    degreeOfParallelism = Environment.ProcessorCount;
+                }
+                //Console.WriteLine("Total No. of Threads are: " + degreeOfParallelism);
+                Log.Information($"Total No. of Threads are: {degreeOfParallelism}");
+
+                //Now consume it only for 100 records
+                dataList = dataList.Take(100).ToList();
+
+                await PostDataToApiParallel(dataList, degreeOfParallelism);
+
+                //Console.WriteLine("Posting Data is completed ...");
+                Log.Information("Posting Data is completed ...");
 
                 /* Logs */
-                Console.WriteLine("Processing complete.");
+                //Console.WriteLine("Processing complete.");
+                Log.Information("Processing complete.");
 
                 endTime = DateTime.Now;
-                Console.WriteLine("Processing ends on: " + endTime);
-                Console.WriteLine("Total Time Consumption in minutes:" + (endTime - startTime).TotalMinutes);
+                //Console.WriteLine("Processing ends on: " + endTime);
+                Log.Information("Processing ends on: {EndTime}", endTime);
+
+                //Console.WriteLine("Total Time Consumption in minutes: " + (endTime - startTime).TotalMinutes.ToString("##.##"));
+                Log.Information("Total Time Consumption in minutes: {TotalMinutes}", (endTime - startTime).TotalMinutes.ToString("##.##"));
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                //Console.WriteLine($"Error: {ex.Message}");
+                Log.Error(ex, "Error: {ErrorMessage}", ex.Message);
+            }
+            finally
+            {
+                // Close and flush the Serilog logger
+                Log.CloseAndFlush();
             }
 
             Console.Read();
         }
 
-        static async Task PostDataToApiParallel(List<DataModel> dataList)
+        static async Task PostDataToApiParallel(List<DataModel> dataList, int degreeOfParallelism)
         {
-            // Parallelize the processing using Parallel.ForEach
-            Parallel.ForEach(dataList, async (dataItem) =>
+            // Create a list of tasks for posting data
+            List<Task> postingTasks = new List<Task>();
+
+            // Create a CancellationToken to allow for cancellation
+            CancellationToken cancellationToken = cancellationTokenSource.Token;
+
+            try
             {
-                var postData = new
+                // Parallelize the processing using Parallel.ForEach
+                Parallel.ForEach(dataList, new ParallelOptions { MaxDegreeOfParallelism = degreeOfParallelism }, (dataItem) =>
                 {
-                    title = dataItem.name,
-                    body = dataItem.path,
-                    userId = dataItem.code
-                };
+                    // Check for cancellation before starting each task
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                string json = JsonConvert.SerializeObject(postData);
-
-                using (HttpClient client = new HttpClient())
+                    // Create a task for each data item
+                    Task postingTask = Task.Run(async () =>
                 {
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                    HttpResponseMessage response = await client.PostAsync(postApiUrl, content);
-
-                    if (response.IsSuccessStatusCode)
+                    using (HttpClient client = new HttpClient())
                     {
-                        string responseJson = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine(responseJson);
+                        var postData = new
+                        {
+                            title = dataItem.name,
+                            body = dataItem.path,
+                            userId = dataItem.code
+                        };
+
+                        string json = JsonConvert.SerializeObject(postData);
+
+                        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                        HttpResponseMessage response = await client.PostAsync(postApiUrl, content);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            string responseJson = await response.Content.ReadAsStringAsync();
+                                //Console.WriteLine(responseJson);
+                                //Log.Information(responseJson);
+                                Log.Information("Record Update:(" + responseJson + ");");
+                        }
+                        else
+                        {
+                                //Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                                Log.Error($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                        }
                     }
-                    else
-                    {
-                        Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
-                    }
-                }
-            });
+                }, cancellationToken);
+
+                    postingTasks.Add(postingTask);
+                });
+
+                // Wait for all of the posting tasks to complete
+                await Task.WhenAll(postingTasks);
+            }
+            catch (OperationCanceledException)
+            {
+                //Console.WriteLine("Processing was canceled.");
+                Log.Warning("Processing was canceled.");
+            }
         }
     }
 
