@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +11,8 @@ namespace MultithreadingExample
     {
         private static readonly string getApiUrl = "https://countrycode.org/api/countryCode/countryMenu";
         private static readonly string postApiUrl = "https://jsonplaceholder.typicode.com/posts";
+        private static DateTime startTime;
+        private static DateTime endTime;
 
         static async Task<List<DataModel>> FetchDataFromApi(string apiUrl)
         {
@@ -27,11 +28,25 @@ namespace MultithreadingExample
         {
             try
             {
-                List<DataModel> dataList = await FetchDataFromApi(getApiUrl);
-                await PostDateToApi(dataList);
+                startTime = DateTime.Now;
 
+                /* Fetch Data */
+                Console.WriteLine("Processing starts on: " + startTime);
+                Console.WriteLine("Fetching Data is in process ...");
+                List<DataModel> dataList = await FetchDataFromApi(getApiUrl);
+                Console.WriteLine("Fetching Data is completed ...");
+
+                /* Post Data */
+                Console.WriteLine("Posting Data is in process ...");
+                await PostDataToApiParallel(dataList); // Use parallel processing
+                Console.WriteLine("Posting Data is completed ...");
+
+                /* Logs */
                 Console.WriteLine("Processing complete.");
 
+                endTime = DateTime.Now;
+                Console.WriteLine("Processing ends on: " + endTime);
+                Console.WriteLine("Total Time Consumption in minutes:" + (endTime - startTime).TotalMinutes);
             }
             catch (Exception ex)
             {
@@ -41,10 +56,10 @@ namespace MultithreadingExample
             Console.Read();
         }
 
-
-        static async Task PostDateToApi(List<DataModel> dataList)
+        static async Task PostDataToApiParallel(List<DataModel> dataList)
         {
-            foreach (var dataItem in dataList)
+            // Parallelize the processing using Parallel.ForEach
+            Parallel.ForEach(dataList, async (dataItem) =>
             {
                 var postData = new
                 {
@@ -57,10 +72,8 @@ namespace MultithreadingExample
 
                 using (HttpClient client = new HttpClient())
                 {
-                    // Create a new StringContent object and set the "Content-Type" header here
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    // Send the POST request with the content
                     HttpResponseMessage response = await client.PostAsync(postApiUrl, content);
 
                     if (response.IsSuccessStatusCode)
@@ -73,7 +86,7 @@ namespace MultithreadingExample
                         Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
                     }
                 }
-            }
+            });
         }
     }
 
