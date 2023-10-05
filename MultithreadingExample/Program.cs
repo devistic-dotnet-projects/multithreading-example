@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -13,12 +13,13 @@ namespace MultithreadingExample
 {
     class Program
     {
+        private static readonly bool IsSingleThread = bool.Parse(ConfigurationManager.AppSettings["IsSingleThread"]);
         private static int degreeOfParallelism = int.Parse(ConfigurationManager.AppSettings["DegreeOfParallelism"]);
         private static readonly string getApiUrl = "https://countrycode.org/api/countryCode/countryMenu";
         private static readonly string postApiUrl = "https://jsonplaceholder.typicode.com/posts";
         private static DateTime startTime;
         private static DateTime endTime;
-        private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private static readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private static int TotalRecorsCount = 0;
         private static int UpdateRecorsCount = 0;
 
@@ -35,7 +36,7 @@ namespace MultithreadingExample
         static async Task Main(string[] args)
         {
             // Define the excluded messages
-            var excludedMessages = new HashSet<string> { "Record Update:" };
+            //var excludedMessages = new HashSet<string> { "Record Update:" };
 
             // Configure Serilog for logging to the console and a log file
             Log.Logger = new LoggerConfiguration()
@@ -70,11 +71,18 @@ namespace MultithreadingExample
                 //Console.WriteLine("Total No. of Threads are: " + degreeOfParallelism);
                 Log.Information($"Total No. of Threads are: {degreeOfParallelism}");
 
-                //Now consume it only for 100 records
+                //Now consume it only for 10 records
                 dataList = dataList.Take(100).ToList();
                 TotalRecorsCount = dataList.Count;
 
-                await PostDataToApiParallel(dataList, degreeOfParallelism);
+                if (IsSingleThread)
+                {
+                    await PostDataToApi(dataList);
+                }
+                else
+                {
+                    await PostDataToApiParallel(dataList, degreeOfParallelism);
+                }
 
                 //Console.WriteLine("Posting Data is completed ...");
                 Log.Information("Posting Data is completed ...");
@@ -102,6 +110,42 @@ namespace MultithreadingExample
             }
 
             Console.Read();
+        }
+
+        private static async Task PostDataToApi(List<DataModel> dataList)
+        {
+            foreach (var item in dataList)
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    var postData = new
+                    {
+                        title = item.name,
+                        body = item.path,
+                        userId = item.code
+                    };
+
+                    string json = JsonConvert.SerializeObject(postData);
+
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(postApiUrl, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseJson = await response.Content.ReadAsStringAsync();
+                        UpdateRecorsCount++;
+                        //Console.WriteLine(responseJson);
+                        //Log.Information(responseJson);
+                        Log.Information($"Record Update {UpdateRecorsCount}:({responseJson.Replace("\n", "").Trim()});");
+                    }
+                    else
+                    {
+                        //Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                        Log.Error($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+                    }
+                }
+            }
         }
 
         static async Task PostDataToApiParallel(List<DataModel> dataList, int degreeOfParallelism)
