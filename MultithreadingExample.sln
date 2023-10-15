@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultithreadingExample", "Mu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example2", "Example2\Example2.csproj", "{A5FC9CAD-0430-481B-A888-DC8358884AD7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{DBFF3154-DD7E-4EBF-8344-B64B82E93301}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi.Tests", "WebApi.Tests\WebApi.Tests.csproj", "{0BFB0A2B-17F5-4A43-855C-106D8A822F52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{A5FC9CAD-0430-481B-A888-DC8358884AD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5FC9CAD-0430-481B-A888-DC8358884AD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5FC9CAD-0430-481B-A888-DC8358884AD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBFF3154-DD7E-4EBF-8344-B64B82E93301}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBFF3154-DD7E-4EBF-8344-B64B82E93301}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBFF3154-DD7E-4EBF-8344-B64B82E93301}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBFF3154-DD7E-4EBF-8344-B64B82E93301}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
