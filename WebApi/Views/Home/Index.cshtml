@@ -1,21 +1,28 @@
 ﻿<div class="jumbotron">
     <h1>Example Web APIs</h1>
     <p class="lead">This application provides fake APIs and fake products data for your use.</p>
+    <p class="">Total Products: @ViewBag.ProductsCount</p>
+    <p class="text-muted">use <b>?formate=xml</b> after api url to get data in xml format.</p>
 </div>
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <h2>Add Products</h2>
         <p>Clicking the <strong>Add Products</strong> button will trigger an action to add 20 products to the JSON data file.</p>
-        <p><a class="btn btn-primary" target="_blank" href="/Products/Add/20">Add Products</a></p>
+        <p><a class="btn btn-primary" target="_blank" href="/api/products/add/20">Add Products</a></p>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
+        <h2>Delete Products</h2>
+        <p>Clicking the <strong>Delete Products</strong> button will trigger an action to delete 20 products from the JSON data file.</p>
+        <p><a class="btn btn-primary" target="_blank" href="/api/products/delete/20">Delete Products</a></p>
+    </div>
+    <div class="col-md-6">
         <h2>Get All Products</h2>
         <p>Clicking the <strong>Get All Products</strong> button will redirect you to a page where you can retrieve all the products.</p>
-        <p><a class="btn btn-primary" target="_blank" href="/Products/Get">Get All Products</a></p>
+        <p><a class="btn btn-primary" target="_blank" href="/api/products/getall">Get All Products</a></p>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <h2>Get Limited Products</h2>
         <p>Clicking the <strong>Get Limited Products</strong> button will redirect you to a page where you can retrieve a limited number of products, e.g., 20.</p>
-        <p><a class="btn btn-primary" target="_blank" href="/Products/Get/20">Get Limited Products</a></p>
+        <p><a class="btn btn-primary" target="_blank" href="/api/products/get/20">Get Limited Products</a></p>
     </div>
 </div>
