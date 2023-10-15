@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using MultithreadingExample.Models;
+using MultithreadingExample.Handlers;
 
 namespace MultithreadingExample
 {
@@ -15,21 +17,22 @@ namespace MultithreadingExample
     {
         private static readonly bool IsSingleThread = bool.Parse(ConfigurationManager.AppSettings["IsSingleThread"]);
         private static int degreeOfParallelism = int.Parse(ConfigurationManager.AppSettings["DegreeOfParallelism"]);
-        private static readonly string getApiUrl = "https://countrycode.org/api/countryCode/countryMenu";
-        private static readonly string postApiUrl = "https://jsonplaceholder.typicode.com/posts";
+        //private static readonly string getApiUrl = "https://localhost:44368/api/products/getall";
+        private static readonly string getApiUrl = "https://localhost:44368/api/products/get/1";
+        private static readonly string postApiUrl = "https://localhost:44368/api/order/add";
         private static DateTime startTime;
         private static DateTime endTime;
         private static readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private static int TotalRecorsCount = 0;
         private static int UpdateRecorsCount = 0;
 
-        static async Task<List<DataModel>> FetchDataFromApi(string apiUrl)
+        static async Task<List<Product>> FetchDataFromApi(string apiUrl)
         {
             using (HttpClient client = new HttpClient())
             {
                 string json = await client.GetStringAsync(apiUrl);
-                List<DataModel> dataList = JsonConvert.DeserializeObject<List<DataModel>>(json);
-                return dataList;
+                JsonResponse<List<Product>> dataList = JsonConvert.DeserializeObject<JsonResponse<List<Product>>>(json);
+                return dataList.data;
             }
         }
 
@@ -51,7 +54,7 @@ namespace MultithreadingExample
                 //Console.WriteLine("Fetching Data is in process ...");
                 Log.Information("Fetching Data is in process ...");
 
-                List<DataModel> dataList = await FetchDataFromApi(getApiUrl);
+                List<Product> dataList = await FetchDataFromApi(getApiUrl);
                 //Console.WriteLine("Fetching Data is completed ...");
                 Log.Information("Fetching Data is completed ...");
 
@@ -113,17 +116,20 @@ namespace MultithreadingExample
             Console.Read();
         }
 
-        private static async Task PostDataToApi(List<DataModel> dataList)
+        private static async Task PostDataToApi(List<Product> dataList)
         {
             foreach (var item in dataList)
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    var postData = new
+                    var postData = new Order
                     {
-                        title = item.name,
-                        body = item.path,
-                        userId = item.code
+                        // I am using temp email from this link https://mail.tm/en/
+                        UserEmail = "trweszcrpo@pretreer.com",
+                        Url = "",
+                        Content = item.title,
+                        Message = "Thank you for shopping!",
+                        OrderItem = new OrderItem { ProductId = item.id, UserId = item.id },
                     };
 
                     string json = JsonConvert.SerializeObject(postData);
@@ -149,7 +155,7 @@ namespace MultithreadingExample
             }
         }
 
-        static async Task PostDataToApiParallel(List<DataModel> dataList)
+        static async Task PostDataToApiParallel(List<Product> dataList)
         {
             // Create a list of tasks for posting data
             List<Task> postingTasks = new List<Task>();
@@ -160,7 +166,7 @@ namespace MultithreadingExample
             try
             {
                 // Parallelize the processing using Parallel.ForEach
-                Parallel.ForEach(dataList, (dataItem) =>
+                Parallel.ForEach(dataList, (item) =>
                 {
                     // Check for cancellation before starting each task
                     cancellationToken.ThrowIfCancellationRequested();
@@ -170,11 +176,14 @@ namespace MultithreadingExample
                 {
                     using (HttpClient client = new HttpClient())
                     {
-                        var postData = new
+                        var postData = new Order
                         {
-                            title = dataItem.name,
-                            body = dataItem.path,
-                            userId = dataItem.code
+                            // I am using temp email from this link https://mail.tm/en/
+                            UserEmail = "trweszcrpo@pretreer.com",
+                            Url = "",
+                            Content = item.title,
+                            Message = "Thank you for shopping!",
+                            OrderItem = new OrderItem { ProductId = item.id, UserId = item.id },
                         };
 
                         string json = JsonConvert.SerializeObject(postData);
@@ -186,10 +195,19 @@ namespace MultithreadingExample
                         if (response.IsSuccessStatusCode)
                         {
                             string responseJson = await response.Content.ReadAsStringAsync();
-                            UpdateRecorsCount++;
-                            //Console.WriteLine(responseJson);
-                            //Log.Information(responseJson);
-                            Log.Information($"Record Update {UpdateRecorsCount}:({responseJson.Replace("\n", "").Trim()});");
+                            JsonResponse<string> result = JsonConvert.DeserializeObject<JsonResponse<string>>(responseJson);
+                            if (result.success)
+                            {
+                                result.data = result.data + " Item ID: " + item.id;
+                                UpdateRecorsCount++;
+                                //Console.WriteLine(responseJson);
+                                //Log.Information(responseJson);
+                                Log.Information($"Record Update {UpdateRecorsCount}:({result.data.Replace("\n", "").Trim()});");
+                            }
+                            else
+                            {
+                                Log.Error($"Error: {result.message}");
+                            }
                         }
                         else
                         {

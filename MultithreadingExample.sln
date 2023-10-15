@@ -4,12 +4,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.33927.289
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultithreadingExample", "MultithreadingExample\MultithreadingExample.csproj", "{89009FC2-2F8D-4D01-B2CD-77C694098929}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DBFF3154-DD7E-4EBF-8344-B64B82E93301} = {DBFF3154-DD7E-4EBF-8344-B64B82E93301}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example2", "Example2\Example2.csproj", "{A5FC9CAD-0430-481B-A888-DC8358884AD7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DBFF3154-DD7E-4EBF-8344-B64B82E93301} = {DBFF3154-DD7E-4EBF-8344-B64B82E93301}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{DBFF3154-DD7E-4EBF-8344-B64B82E93301}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi.Tests", "WebApi.Tests\WebApi.Tests.csproj", "{0BFB0A2B-17F5-4A43-855C-106D8A822F52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailTester", "EmailTester\EmailTester.csproj", "{839F3EB8-D4FE-45B5-9A4F-399B033AA719}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +41,10 @@ Global
 		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0BFB0A2B-17F5-4A43-855C-106D8A822F52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{839F3EB8-D4FE-45B5-9A4F-399B033AA719}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{839F3EB8-D4FE-45B5-9A4F-399B033AA719}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{839F3EB8-D4FE-45B5-9A4F-399B033AA719}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{839F3EB8-D4FE-45B5-9A4F-399B033AA719}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
