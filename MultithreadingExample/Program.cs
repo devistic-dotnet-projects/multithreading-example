@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -59,20 +59,21 @@ namespace MultithreadingExample
                 startTime = DateTime.Now;
 
                 //Console.WriteLine("Processing starts with " + degreeOfParallelism + " Degree Of Parallelism on: " + startTime);
-                Log.Information($"Processing starts with {degreeOfParallelism} Degree Of Parallelism on: {startTime}");
+                Log.Information($"Processing starts on: {startTime}");
                 //Console.WriteLine("Posting Data is in process ...");
                 Log.Information("Posting Data is in process ...");
 
-                if (degreeOfParallelism == 0)
-                {
-                    // Use Environment.ProcessorCount to get the maximum available threads
-                    degreeOfParallelism = Environment.ProcessorCount;
-                }
+                //if (degreeOfParallelism == 0)
+                //{
+                //    // Use Environment.ProcessorCount to get the maximum available threads
+                //    degreeOfParallelism = Environment.ProcessorCount;
+                //}
                 //Console.WriteLine("Total No. of Threads are: " + degreeOfParallelism);
-                Log.Information($"Total No. of Threads are: {degreeOfParallelism}");
+                //Log.Information($"Total No. of Processor are: {degreeOfParallelism}");
 
                 //Now consume it only for 10 records
-                dataList = dataList.Take(100).ToList();
+                //dataList = dataList.Take(100).ToList();
+                dataList = dataList.ToList();
                 TotalRecorsCount = dataList.Count;
 
                 if (IsSingleThread)
@@ -81,7 +82,7 @@ namespace MultithreadingExample
                 }
                 else
                 {
-                    await PostDataToApiParallel(dataList, degreeOfParallelism);
+                    await PostDataToApiParallel(dataList);
                 }
 
                 //Console.WriteLine("Posting Data is completed ...");
@@ -148,7 +149,7 @@ namespace MultithreadingExample
             }
         }
 
-        static async Task PostDataToApiParallel(List<DataModel> dataList, int degreeOfParallelism)
+        static async Task PostDataToApiParallel(List<DataModel> dataList)
         {
             // Create a list of tasks for posting data
             List<Task> postingTasks = new List<Task>();
@@ -159,7 +160,7 @@ namespace MultithreadingExample
             try
             {
                 // Parallelize the processing using Parallel.ForEach
-                Parallel.ForEach(dataList, new ParallelOptions { MaxDegreeOfParallelism = degreeOfParallelism }, (dataItem) =>
+                Parallel.ForEach(dataList, (dataItem) =>
                 {
                     // Check for cancellation before starting each task
                     cancellationToken.ThrowIfCancellationRequested();
